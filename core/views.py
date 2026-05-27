@@ -199,6 +199,11 @@ def verify_code(request):
     if not subscriber:
         return Response({'valid': False, 'message': 'Invalid subscription code.'}, status=404)
 
+
+    # Only allow if verified_by_admin is True
+    if not getattr(subscriber, 'verified_by_admin', False):
+        return Response({'valid': False, 'message': 'Your subscription is not yet activated by admin.'}, status=403)
+
     if not subscriber.is_valid():
         return Response({'valid': False, 'message': 'Your subscription has expired or been deactivated.'}, status=403)
 
@@ -218,7 +223,8 @@ def verify_code(request):
         'name': subscriber.name,
         'email': subscriber.email,
         'expires_at': subscriber.expires_at,
-        'message': f'Welcome back, {subscriber.name}!',
+        'verified_by_admin': getattr(subscriber, 'verified_by_admin', False),
+        'message': f'Welcome back, {subscriber.name}!'
     })
 
 
@@ -393,18 +399,18 @@ def admin_subscribers(request):
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 @require_staff
-def admin_subscriber_detail(request, pk):
+def admin_subscriber_detail(request, pk): 
     subscriber = Subscriber.objects.filter(pk=pk).first()
     if not subscriber:
         return Response({'error': 'Subscriber not found.'}, status=404)
 
-    allowed_fields = {'is_active', 'expires_at', 'name', 'phone'}
+    allowed_fields = {'expires_at', 'name', 'phone', 'verified_by_admin'}
     data = {k: v for k, v in request.data.items() if k in allowed_fields}
 
     serializer = SubscriberSerializer(subscriber, data=data, partial=True)
     if serializer.is_valid():
         serializer.save()
-        action = 'deactivate' if data.get('is_active') is False else 'verify'
+        action = 'deactivate' if data.get('verified_by_admin') is False else 'verify'
         SessionLog.objects.create(
             subscriber=subscriber,
             action=action,

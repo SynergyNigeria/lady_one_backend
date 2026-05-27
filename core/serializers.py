@@ -20,8 +20,8 @@ class SubscriberSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subscriber
-        fields = ['id', 'name', 'email', 'phone', 'subscriber_code', 'is_active',
-                  'created_at', 'expires_at', 'visitor_ip', 'is_expired']
+        fields = ['id', 'name', 'email', 'phone', 'subscriber_code',
+                  'created_at', 'expires_at', 'visitor_ip', 'is_expired', 'verified_by_admin']
         read_only_fields = ['id', 'subscriber_code', 'created_at']
 
     def get_visitor_ip(self, obj):

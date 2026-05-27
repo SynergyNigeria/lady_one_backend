@@ -34,6 +34,7 @@ class Subscriber(models.Model):
     phone = models.CharField(max_length=30, blank=True, default='')
     subscriber_code = models.CharField(max_length=20, unique=True, default=generate_subscriber_code)
     is_active = models.BooleanField(default=True)
+    verified_by_admin = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(null=True, blank=True)
     visitor = models.OneToOneField(
