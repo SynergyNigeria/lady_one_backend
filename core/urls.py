@@ -5,6 +5,7 @@ urlpatterns = [
     # --- Public ---
     path('track/', views.track_visitor),
     path('subscribe/', views.subscribe),
+    path('check-code/', views.check_code),
     path('verify-code/', views.verify_code),
     path('chat/start/', views.start_conversation),
     path('chat/<str:session_id>/messages/', views.chat_messages),

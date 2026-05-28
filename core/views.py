@@ -189,6 +189,30 @@ def subscribe(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+def check_code(request):
+    code = sanitize(request.data.get('code', '')).upper()
+
+    if not code:
+        return Response({'error': 'Subscription code is required.'}, status=400)
+
+    subscriber = Subscriber.objects.filter(subscriber_code=code).first()
+    if not subscriber:
+        return Response({'exists': False, 'message': 'Invalid subscription code.'}, status=404)
+
+    if not subscriber.is_active or (subscriber.expires_at and subscriber.expires_at < timezone.now()):
+        return Response({'exists': False, 'message': 'Your subscription has expired or been deactivated.'}, status=403)
+
+    return Response({
+        'exists': True,
+        'subscriber_code': subscriber.subscriber_code,
+        'name': subscriber.name,
+        'verified_by_admin': getattr(subscriber, 'verified_by_admin', False),
+        'message': 'Booking code found.'
+    })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def verify_code(request):
     code = sanitize(request.data.get('code', '')).upper()
 
@@ -202,7 +226,14 @@ def verify_code(request):
 
     # Only allow if verified_by_admin is True
     if not getattr(subscriber, 'verified_by_admin', False):
-        return Response({'valid': False, 'message': 'Your subscription is not yet activated by admin.'}, status=403)
+        return Response({
+            'valid': False,
+            'code_exists': True,
+            'subscriber_code': subscriber.subscriber_code,
+            'name': subscriber.name,
+            'verified_by_admin': False,
+            'message': 'Your booking code is not yet verified by admin.'
+        }, status=403)
 
     if not subscriber.is_valid():
         return Response({'valid': False, 'message': 'Your subscription has expired or been deactivated.'}, status=403)
