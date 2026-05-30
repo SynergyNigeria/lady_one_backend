@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.conf import settings
 from .models import Visitor, Subscriber, Conversation, ChatMessage, SessionLog
 
 
@@ -42,8 +43,11 @@ class ChatMessageSerializer(serializers.ModelSerializer):
     def get_attachment_url(self, obj):
         if not obj.attachment:
             return None
-        request = self.context.get('request')
         url = obj.attachment.url
+        if settings.MEDIA_BASE_URL:
+            return f'{settings.MEDIA_BASE_URL}{url}'
+
+        request = self.context.get('request')
         return request.build_absolute_uri(url) if request else url
 
 
@@ -71,7 +75,13 @@ class ConversationSerializer(serializers.ModelSerializer):
 
     def get_last_message(self, obj):
         msg = obj.messages.last()
-        return msg.content[:100] if msg else None
+        if not msg:
+            return None
+        if msg.content:
+            return msg.content[:100]
+        if msg.attachment:
+            return 'Photo'
+        return None
 
     def get_message_count(self, obj):
         return obj.messages.count()
